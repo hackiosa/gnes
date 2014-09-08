@@ -559,7 +559,7 @@ void cmp_abx()
         else clear_carry();
     update_zero(a - value);
     update_negative(a - value);
-    if ((address & 0xFF00) == (pc & 0xFF00))
+    if ((address & 0xFF00) != (pc & 0xFF00))
         cycles += 1;
     pc += 3;
 }
@@ -572,7 +572,7 @@ void cmp_aby()
         else clear_carry();
     update_zero(a - value);
     update_negative(a - value);
-    if ((address & 0xFF00) == (pc & 0xFF00))
+    if ((address & 0xFF00) != (pc & 0xFF00))
         cycles += 1;
     pc += 3;
 }
@@ -595,7 +595,7 @@ void cmp_idy()
         else clear_carry();
     update_zero(a - value);
     update_negative(a - value);
-    if ((address & 0xFF00) == (pc & 0xFF00))
+    if ((address & 0xFF00) != (pc & 0xFF00))
         cycles += 1;
     pc += 2;
 }
@@ -718,6 +718,95 @@ void dey()
     pc++;
 }
 
+void eor_imm()
+{
+    uint8_t value = mmu_read(pc + 1);
+    uint8_t result = a ^ value;
+    update_zero(result);
+    update_negative(result);
+    a = result;
+    pc += 2;
+}
+
+void eor_zp()
+{
+    uint8_t value = mmu_read(mmu_read(pc + 1));
+    uint8_t result = a ^ value;
+    update_zero(result);
+    update_negative(result);
+    a = result;
+    pc += 2;
+}
+
+void eor_zpx()
+{
+    uint8_t value = mmu_read((mmu_read(pc + 1) + x) & 0xFF);
+    uint8_t result = a ^ value;
+    update_zero(result);
+    update_negative(result);
+    a = result;
+    pc += 2;
+}
+
+void eor_abs()
+{
+    uint8_t value = mmu_read(mmu_read16(pc + 1));
+    uint8_t result = a ^ value;
+    update_zero(result);
+    update_negative(result);
+    a = result;
+    pc += 3;    
+}
+
+void eor_abx()
+{
+    uint16_t address = mmu_read16(pc + 1) + x;
+    uint8_t value = mmu_read(address);
+    uint8_t result = a ^ value;
+    update_zero(result);
+    update_negative(result);
+    a = result;
+    if ((address & 0xFF00) != (pc & 0xFF00))
+        cycles += 1;
+    pc += 3;    
+}
+
+void eor_aby()
+{
+    uint16_t address = mmu_read16(pc + 1) + y;
+    uint8_t value = mmu_read(address);
+    uint8_t result = a ^ value;
+    update_zero(result);
+    update_negative(result);
+    a = result;
+    if ((address & 0xFF00) != (pc & 0xFF00))
+        cycles += 1;
+    pc += 3;    
+}
+
+void eor_idx()
+{
+    uint8_t value = mmu_read(mmu_read16(mmu_read(pc + 1) + x));
+    uint8_t result = a ^ value;
+    update_zero(result);
+    update_negative(result);
+    a = result;
+    pc += 2; 
+}
+
+void eor_idy()
+{
+    uint16_t address = mmu_read16(mmu_read(pc + 1)) + y;
+    uint8_t value = mmu_read(address);
+    uint8_t result = a ^ value;
+    update_zero(result);
+    update_negative(result);
+    a = result;
+    if ((address & 0xFF00) != (pc & 0xFF00))
+        cycles += 1;
+    pc += 2; 
+}
+
 void cpu_step()
 {
     switch (mmu_read(pc))
@@ -741,8 +830,16 @@ void cpu_step()
     case 0x35: and_zpx(); break;
     case 0x39: and_aby(); break;
     case 0x3D: and_abx(); break;
+    case 0x41: eor_idx(); break;
+    case 0x45: eor_zp(); break;
+    case 0x49: eor_imm(); break;
+    case 0x4D: eor_abs(); break;
     case 0x50: bvc_rel(); break;
+    case 0x51: eor_idy(); break;
+    case 0x55: eor_zpx(); break;
     case 0x58: cli(); break;
+    case 0x59: eor_aby(); break;
+    case 0x5D: eor_abx(); break;
     case 0x61: adc_idx(); break;
     case 0x65: adc_zp(); break;
     case 0x69: adc_imm(); break;
