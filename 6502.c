@@ -847,6 +847,22 @@ void inc_abx()
     pc += 3;
 }
 
+void inx()
+{
+    x++;
+    update_zero(x);
+    update_negative(x);
+    pc++;
+}
+
+void iny()
+{
+    y++;
+    update_zero(y);
+    update_negative(y);
+    pc++;
+}
+
 void cpu_step()
 {
     switch (mmu_read(pc))
@@ -898,6 +914,7 @@ void cpu_step()
     case 0xC4: cpy_zp(); break;
     case 0xC5: cmp_zp(); break;
     case 0xC6: dec_zp(); break;
+    case 0xC8: iny(); break;
     case 0xC9: cmp_imm(); break;
     case 0xCA: dex(); break;
     case 0xCC: cpy_abs(); break;
@@ -913,6 +930,7 @@ void cpu_step()
     case 0xE0: cpx_imm(); break;
     case 0xE4: cpx_zp(); break;
     case 0xE6: inc_zp(); break;
+    case 0xE8: inx(); break;
     case 0xEC: cpx_abs(); break;
     case 0xEE: inc_abs(); break;
     case 0xF0: beq_rel(); break;
