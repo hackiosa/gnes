@@ -807,6 +807,46 @@ void eor_idy()
     pc += 2; 
 }
 
+void inc_zp()
+{
+    uint8_t address = mmu_read(pc + 1);
+    uint8_t result = mmu_read(address) + 1;
+    update_zero(result);
+    update_negative(result);
+    mmu_write(address, result);
+    pc += 2;
+}
+
+void inc_zpx()
+{
+    uint8_t address = (mmu_read(pc + 1) + x) & 0xFF;
+    uint8_t result = mmu_read(address) + 1;
+    update_zero(result);
+    update_negative(result);
+    mmu_write(address, result);
+    pc += 2;
+}
+
+void inc_abs()
+{
+    uint8_t address = mmu_read16(pc + 1);
+    uint8_t result = mmu_read(address) + 1;
+    update_zero(result);
+    update_negative(result);
+    mmu_write(address, result);
+    pc += 3;
+}
+
+void inc_abx()
+{
+    uint8_t address = mmu_read16(pc + 1) + x;
+    uint8_t result = mmu_read(address) + 1;
+    update_zero(result);
+    update_negative(result);
+    mmu_write(address, result);
+    pc += 3;
+}
+
 void cpu_step()
 {
     switch (mmu_read(pc))
@@ -872,8 +912,12 @@ void cpu_step()
     case 0xDE: dec_abx(); break;
     case 0xE0: cpx_imm(); break;
     case 0xE4: cpx_zp(); break;
+    case 0xE6: inc_zp(); break;
     case 0xEC: cpx_abs(); break;
+    case 0xEE: inc_abs(); break;
     case 0xF0: beq_rel(); break;
+    case 0xF6: inc_zpx(); break;
+    case 0xFE: inc_abx(); break;
     default:
         printf("6502.c: Meeh! I don't know that instruction @ %4x\n", pc);
         break;
