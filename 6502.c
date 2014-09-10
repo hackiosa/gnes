@@ -885,6 +885,79 @@ void jsr_abs()
     pc = mmu_read(pc + 1);
 }
 
+void lda_imm()
+{
+    a = mmu_read(pc + 1);
+    update_zero(a);
+    update_negative(a);
+    pc += 2;
+}
+
+void lda_zp()
+{
+    a = mmu_read(mmu_read(pc + 1));
+    update_zero(a);
+    update_negative(a);
+    pc += 2;
+}
+
+void lda_zpx()
+{
+    a = mmu_read((mmu_read(pc + 1) + x) & 0xFF);
+    update_zero(a);
+    update_negative(a);
+    pc += 2;
+}
+
+void lda_abs()
+{
+    a = mmu_read(mmu_read16(pc + 1));
+    update_zero(a);
+    update_negative(a);
+    pc += 3;
+}
+
+void lda_abx()
+{
+    uint16_t address = mmu_read16(pc + 1) + x;
+    a = mmu_read(address);
+    update_zero(a);
+    update_negative(a);
+    if ((address & 0xFF00) != (pc & 0xFF00))
+        cycles++; 
+    pc += 3;
+}
+
+void lda_aby()
+{
+    uint16_t address = mmu_read16(pc + 1) + y;
+    a = mmu_read(address);
+    update_zero(a);
+    update_negative(a);
+    if ((address & 0xFF00) != (pc & 0xFF00))
+        cycles++; 
+    pc += 3;
+}
+
+void lda_idx()
+{
+    a = mmu_read(mmu_read16(mmu_read(pc + 1) + x));
+    update_zero(a);
+    update_negative(a);
+    pc += 2;
+}
+
+void lda_idy()
+{
+    uint16_t address = mmu_read16(mmu_read(pc + 1)) + y;
+    a = mmu_read(address);
+    update_zero(a);
+    update_negative(a);
+    if ((address & 0xFF00) != (pc & 0xFF00))
+        cycles++; 
+    pc += 2;
+}
+
 void cpu_step()
 {
     switch (mmu_read(pc))
@@ -932,8 +1005,16 @@ void cpu_step()
     case 0x7D: adc_abx(); break;
     case 0x88: dey(); break;
     case 0x90: bcc_rel(); break;
+    case 0xA1: lda_idx(); break;
+    case 0xA5: lda_zp(); break;
+    case 0xA9: lda_imm(); break;
+    case 0xAD: lda_abs(); break;
     case 0xB0: bcs_rel(); break;
+    case 0xB1: lda_idy(); break;
+    case 0xB5: lda_zpx(); break;
     case 0xB8: clv(); break;
+    case 0xB9: lda_aby(); break;
+    case 0xBD: lda_abx(); break;
     case 0xC0: cpy_imm(); break;
     case 0xC1: cmp_idx(); break;
     case 0xC4: cpy_zp(); break;
