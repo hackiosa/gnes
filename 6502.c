@@ -863,6 +863,28 @@ void iny()
     pc++;
 }
 
+void jmp_abs()
+{
+    pc = mmu_read16(pc + 1);
+}
+
+void jmp_ind()
+{
+    uint16_t pointer = mmu_read16(pc + 1);
+    if (pointer & 0xFF) // Target address is not correctly read if the indirect vector falls on a page boundary
+    {
+        pc = mmu_read(pointer) | (mmu_read(pointer & 0xFF00) << 8); 
+    } else {
+        pc = mmu_read16(pointer);
+    }
+}
+
+void jsr_abs()
+{
+    cpu_push16(pc + 2);
+    pc = mmu_read(pc + 1);
+}
+
 void cpu_step()
 {
     switch (mmu_read(pc))
@@ -875,6 +897,7 @@ void cpu_step()
     case 0x16: asl_zpx(); break;
     case 0x18: clc(); break;
     case 0x1E: asl_abx(); break;
+    case 0x20: jsr_abs(); break;
     case 0x21: and_idx(); break;
     case 0x24: bit_zp(); break;
     case 0x25: and_zp(); break;
@@ -889,6 +912,7 @@ void cpu_step()
     case 0x41: eor_idx(); break;
     case 0x45: eor_zp(); break;
     case 0x49: eor_imm(); break;
+    case 0x4C: jmp_abs(); break;
     case 0x4D: eor_abs(); break;
     case 0x50: bvc_rel(); break;
     case 0x51: eor_idy(); break;
@@ -899,6 +923,7 @@ void cpu_step()
     case 0x61: adc_idx(); break;
     case 0x65: adc_zp(); break;
     case 0x69: adc_imm(); break;
+    case 0x6C: jmp_ind(); break;
     case 0x6D: adc_abs(); break;
     case 0x70: bvs_rel(); break;
     case 0x71: adc_idy(); break;
