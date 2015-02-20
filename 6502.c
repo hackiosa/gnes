@@ -1338,6 +1338,126 @@ void ror_abx()
     pc += 3;
 }
 
+void rti()
+{
+    p = cpu_pop();
+    pc = cpu_pop16();
+}
+
+void rts()
+{
+    pc = cpu_pop16() + 1;
+}
+
+/* SBC: Fix cycles for specific opcodes ON Page Cross */
+void sbc_imm()
+{
+    uint8_t value = mmu_read(pc + 1);
+    uint16_t result = a - value + CARRY;
+    update_overflow(result, a, value + CARRY);
+    update_carry(result);
+    update_zero(result);
+    update_negative(result);
+    a = result & 0xFF;
+    pc += 2;
+}
+
+void sbc_zp()
+{
+    uint8_t value = mmu_read(mmu_read(pc + 1));
+    uint16_t result = a - value + CARRY;
+    update_overflow(result, a, value + CARRY);
+    update_carry(result);
+    update_zero(result);
+    update_negative(result);
+    a = result & 0xFF;
+    pc += 2;
+}
+
+void sbc_zpx()
+{
+    uint8_t value = mmu_read((mmu_read(pc + 1) + x) & 0xFF);
+    uint16_t result = a - value + CARRY;
+    update_overflow(result, a, value + CARRY);
+    update_carry(result);
+    update_zero(result);
+    update_negative(result);
+    a = result & 0xFF;
+    pc += 2;
+}
+
+void sbc_abs()
+{
+    uint8_t value = mmu_read(mmu_read16(pc + 1));
+    uint16_t result = a - value + CARRY;
+    update_overflow(result, a, value + CARRY);
+    update_carry(result);
+    update_zero(result);
+    update_negative(result);
+    a = result & 0xFF;
+    pc += 3;
+}
+
+void sbc_abx()
+{
+    uint8_t value = mmu_read(mmu_read16(pc + 1) + x);
+    uint16_t result = a - value + CARRY;
+    update_overflow(result, a, value + CARRY);
+    update_carry(result);
+    update_zero(result);
+    update_negative(result);
+    a = result & 0xFF;
+    pc += 3;
+}
+
+void sbc_aby()
+{
+    uint8_t value = mmu_read(mmu_read16(pc + 1) + y);
+    uint16_t result = a - value + CARRY;
+    update_overflow(result, a, value + CARRY);
+    update_carry(result);
+    update_zero(result);
+    update_negative(result);
+    a = result & 0xFF;
+    pc += 3;
+}
+
+void sbc_idx()
+{
+    uint8_t value = mmu_read(mmu_read16(mmu_read(pc + 1) + x));
+    uint16_t result = a - value + CARRY;
+    update_overflow(result, a, value + CARRY);
+    update_carry(result);
+    update_zero(result);
+    update_negative(result);
+    a = result & 0xFF;
+    pc += 2;
+}
+
+void sbc_idy()
+{
+    uint8_t value = mmu_read(mmu_read16(mmu_read(pc + 1)) + y);
+    uint16_t result = a - value + CARRY;
+    update_overflow(result, a, value + CARRY);
+    update_carry(result);
+    update_zero(result);
+    update_negative(result);
+    a = result & 0xFF;
+    pc += 2;
+}
+
+void sec_imp()
+{
+    set_carry();
+    pc++;
+}
+
+void sei_imp()
+{
+    set_interrupt();
+    pc++;
+}
+
 void cpu_step()
 {
     switch (mmu_read(pc))
@@ -1374,9 +1494,11 @@ void cpu_step()
     case 0x31: and_idy(); break;
     case 0x35: and_zpx(); break;
     case 0x36: rol_zpx(); break;
+    case 0x38: sec_imp(); break;
     case 0x39: and_aby(); break;
     case 0x3D: and_abx(); break;
     case 0x3E: rol_abx(); break;
+    case 0x40: rti(); break;
     case 0x41: eor_idx(); break;
     case 0x45: eor_zp(); break;
     case 0x46: lsr_zp(); break;
@@ -1394,6 +1516,7 @@ void cpu_step()
     case 0x59: eor_aby(); break;
     case 0x5D: eor_abx(); break;
     case 0x5E: lsr_abx(); break;
+    case 0x60: rts(); break;
     case 0x61: adc_idx(); break;
     case 0x65: adc_zp(); break;
     case 0x66: ror_zp(); break;
@@ -1407,6 +1530,7 @@ void cpu_step()
     case 0x71: adc_idy(); break;
     case 0x75: adc_zpx(); break;
     case 0x76: ror_zpx(); break;
+    case 0x78: set_imp(); break;
     case 0x79: adc_aby(); break;
     case 0x7D: adc_abx(); break;
     case 0x7E: ror_abx(); break;
@@ -1451,14 +1575,22 @@ void cpu_step()
     case 0xDD: cmp_abx(); break;
     case 0xDE: dec_abx(); break;
     case 0xE0: cpx_imm(); break;
+    case 0xE1: sbc_idx(); break;
     case 0xE4: cpx_zp(); break;
+    case 0xE5: sbc_zp(); break;
     case 0xE6: inc_zp(); break;
     case 0xE8: inx(); break;
+    case 0xE9: sbc_imm(); break;
     case 0xEA: nop_imp(); break;
     case 0xEC: cpx_abs(); break;
+    case 0xED: sbc_abs(); break;
     case 0xEE: inc_abs(); break;
     case 0xF0: beq_rel(); break;
+    case 0xF1: sbc_idy(); break;
+    case 0xF5: sbc_zpx(); break;
     case 0xF6: inc_zpx(); break;
+    case 0xF9: sbc_aby(); break;
+    case 0xFD: sbc_abx(); break;
     case 0xFE: inc_abx(); break;
     default:
         printf("6502.c: Meeh! I don't know that instruction @ %4x\n", pc);
