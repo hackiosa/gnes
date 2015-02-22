@@ -25,5 +25,6 @@
 #include <stdbool.h>
 
 void cpu_step();
+int cpu_get_cycles();
 
 #endif

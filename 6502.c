@@ -23,7 +23,28 @@ uint8_t a, x, y, sp, p;
 uint16_t pc;
 uint8_t cycles;
 
-/* This #define part is partially inspired by http://rubbermallet.org/fake6502.c */
+// This table was stolen from http://rubbermallet.org/fake6502.c by Mike Chambers
+static const uint32_t ticktable[256] = {
+/*        |  0  |  1  |  2  |  3  |  4  |  5  |  6  |  7  |  8  |  9  |  A  |  B  |  C  |  D  |  E  |  F  |     */
+/* 0 */      7,    6,    2,    8,    3,    3,    5,    5,    3,    2,    2,    2,    4,    4,    6,    6,  /* 0 */
+/* 1 */      2,    5,    2,    8,    4,    4,    6,    6,    2,    4,    2,    7,    4,    4,    7,    7,  /* 1 */
+/* 2 */      6,    6,    2,    8,    3,    3,    5,    5,    4,    2,    2,    2,    4,    4,    6,    6,  /* 2 */
+/* 3 */      2,    5,    2,    8,    4,    4,    6,    6,    2,    4,    2,    7,    4,    4,    7,    7,  /* 3 */
+/* 4 */      6,    6,    2,    8,    3,    3,    5,    5,    3,    2,    2,    2,    3,    4,    6,    6,  /* 4 */
+/* 5 */      2,    5,    2,    8,    4,    4,    6,    6,    2,    4,    2,    7,    4,    4,    7,    7,  /* 5 */
+/* 6 */      6,    6,    2,    8,    3,    3,    5,    5,    4,    2,    2,    2,    5,    4,    6,    6,  /* 6 */
+/* 7 */      2,    5,    2,    8,    4,    4,    6,    6,    2,    4,    2,    7,    4,    4,    7,    7,  /* 7 */
+/* 8 */      2,    6,    2,    6,    3,    3,    3,    3,    2,    2,    2,    2,    4,    4,    4,    4,  /* 8 */
+/* 9 */      2,    6,    2,    6,    4,    4,    4,    4,    2,    5,    2,    5,    5,    5,    5,    5,  /* 9 */
+/* A */      2,    6,    2,    6,    3,    3,    3,    3,    2,    2,    2,    2,    4,    4,    4,    4,  /* A */
+/* B */      2,    5,    2,    5,    4,    4,    4,    4,    2,    4,    2,    4,    4,    4,    4,    4,  /* B */
+/* C */      2,    6,    2,    8,    3,    3,    5,    5,    2,    2,    2,    2,    4,    4,    6,    6,  /* C */
+/* D */      2,    5,    2,    8,    4,    4,    6,    6,    2,    4,    2,    7,    4,    4,    7,    7,  /* D */
+/* E */      2,    6,    2,    8,    3,    3,    5,    5,    2,    2,    2,    2,    4,    4,    6,    6,  /* E */
+/* F */      2,    5,    2,    8,    4,    4,    6,    6,    2,    4,    2,    7,    4,    4,    7,    7   /* F */
+};
+
+// This #define part is partially inspired by http://rubbermallet.org/fake6502.c by Mike Chambers
 #define FLAG_CARRY     0b00000001
 #define FLAG_ZERO      0b00000010
 #define FLAG_INTERRUPT 0b00000100
@@ -1586,7 +1607,9 @@ void tya_imp()
 
 void cpu_step()
 {
-    switch (mmu_read(pc))
+    uint8_t op = mmu_read(pc);
+    cycles = ticktable[op];
+    switch (op)
     {
     case 0x00: brk(); break;
     case 0x01: ora_idx(); break;
@@ -1741,4 +1764,9 @@ void cpu_step()
         printf("6502.c: Meeh! I don't know that instruction @ %4x\n", pc);
         break;
     }
+}
+
+int cpu_get_cycles()
+{
+    return cycles;
 }
