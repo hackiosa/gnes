@@ -174,7 +174,7 @@ void adc_aby()
 
 void adc_idx()
 {
-    uint8_t value = mmu_read(mmu_read16(mmu_read(pc + 1) + x));
+    uint8_t value = mmu_read(mmu_read16((mmu_read(pc + 1) + x) & 0xFF));
     uint16_t result = a + value + CARRY;
     update_overflow(result, a, value + CARRY);
     update_carry(result);
@@ -259,7 +259,7 @@ void and_aby()
 
 void and_idx()
 {
-    uint8_t value = mmu_read(mmu_read16(mmu_read(pc + 1) + x));
+    uint8_t value = mmu_read(mmu_read16((mmu_read(pc + 1) + x) & 0xFF));
     uint8_t result = a & value;
     update_zero(result);
     update_negative(result);
@@ -579,7 +579,7 @@ void cmp_aby()
 
 void cmp_idx()
 {
-    uint8_t value = mmu_read(mmu_read16(mmu_read(pc + 1) + x));
+    uint8_t value = mmu_read(mmu_read16((mmu_read(pc + 1) + x) & 0xFF));
     if (a >= value) set_carry();
         else clear_carry();
     update_zero(a - value);
@@ -786,7 +786,7 @@ void eor_aby()
 
 void eor_idx()
 {
-    uint8_t value = mmu_read(mmu_read16(mmu_read(pc + 1) + x));
+    uint8_t value = mmu_read(mmu_read16((mmu_read(pc + 1) + x) & 0xFF));
     uint8_t result = a ^ value;
     update_zero(result);
     update_negative(result);
@@ -941,7 +941,7 @@ void lda_aby()
 
 void lda_idx()
 {
-    a = mmu_read(mmu_read16(mmu_read(pc + 1) + x));
+    a = mmu_read(mmu_read16((mmu_read(pc + 1) + x) & 0xFF));
     update_zero(a);
     update_negative(a);
     pc += 2;
@@ -1163,7 +1163,7 @@ void ora_aby()
 
 void ora_idx()
 {
-    a |= mmu_read(mmu_read16(mmu_read(pc + 1) + x));
+    a |= mmu_read(mmu_read16((mmu_read(pc + 1) + x) & 0xFF));
     update_zero(a);
     update_negative(a);
     pc += 2;
@@ -1424,7 +1424,7 @@ void sbc_aby()
 
 void sbc_idx()
 {
-    uint8_t value = mmu_read(mmu_read16(mmu_read(pc + 1) + x));
+    uint8_t value = mmu_read(mmu_read16((mmu_read(pc + 1) + x) & 0xFF));
     uint16_t result = a - value + CARRY;
     update_overflow(result, a, value + CARRY);
     update_carry(result);
@@ -1455,6 +1455,132 @@ void sec_imp()
 void sei_imp()
 {
     set_interrupt();
+    pc++;
+}
+
+void sta_zp()
+{
+    mmu_write(mmu_read(pc + 1), a);
+    pc += 2;
+}
+
+void sta_zpx()
+{
+    mmu_write((mmu_read(pc + 1) + x) & 0xFF, a);
+    pc += 2;
+}
+
+void sta_abs()
+{
+    mmu_write(mmu_read16(pc + 1), a);
+    pc += 3;
+}
+
+void sta_abx()
+{
+    mmu_write(mmu_read16(pc + 1) + x, a);
+    pc += 3;
+}
+
+void sta_aby()
+{
+    mmu_write(mmu_read16(pc + 1) + y, a);
+    pc += 3;
+}
+
+void sta_idx()
+{
+    mmu_write(mmu_read16((mmu_read(pc + 1) + x) & 0xFF), a);
+    pc += 2;
+}
+
+void sta_idy()
+{
+    mmu_write(mmu_read16(mmu_read(pc + 1)) + y, a);
+    pc += 2;
+}
+
+void stx_zp()
+{
+    mmu_write(mmu_read(pc + 1), x);
+    pc += 2;
+}
+
+void stx_zpy()
+{
+    mmu_write((mmu_read(pc + 1) + y) & 0xFF, x);
+    pc += 2;
+}
+
+void stx_abs()
+{
+    mmu_write(mmu_read16(pc + 1), x);
+    pc += 3;
+}
+
+void sty_zp()
+{
+    mmu_write(mmu_read(pc + 1), y);
+    pc += 2;
+}
+
+void sty_zpx()
+{
+    mmu_write((mmu_read(pc + 1) + x) & 0xFF, y);
+    pc += 2;
+}
+
+void sty_abs()
+{
+    mmu_write(mmu_read16(pc + 1), y);
+    pc += 3;
+}
+
+void tax_imp()
+{
+    x = a;
+    update_zero(x);
+    update_negative(x);
+    pc++;
+}
+
+void tay_imp()
+{
+    y = a;
+    update_zero(y);
+    update_negative(y);
+    pc++;
+}
+
+void tsx_imp()
+{
+    x = sp;
+    update_zero(x);
+    update_negative(x);
+    pc++;
+}
+
+void txa_imp()
+{
+    a = x;
+    update_zero(a);
+    update_negative(a);
+    pc++;
+}
+
+void txs_imp()
+{
+    sp = x;
+    update_zero(sp);
+    update_negative(sp);
+    pc++;
+}
+
+void tya_imp()
+{
+    a = y;
+    update_zero(a);
+    update_negative(a);
     pc++;
 }
 
@@ -1530,19 +1656,37 @@ void cpu_step()
     case 0x71: adc_idy(); break;
     case 0x75: adc_zpx(); break;
     case 0x76: ror_zpx(); break;
-    case 0x78: set_imp(); break;
+    case 0x78: sei_imp(); break;
     case 0x79: adc_aby(); break;
     case 0x7D: adc_abx(); break;
     case 0x7E: ror_abx(); break;
+    case 0x81: sta_idx(); break;
+    case 0x84: sty_zp(); break;
+    case 0x85: sta_zp(); break;
+    case 0x86: stx_zp(); break;
     case 0x88: dey(); break;
+    case 0x8A: txa_imp(); break;
+    case 0x8C: sty_abs(); break;
+    case 0x8D: sta_abs(); break;
+    case 0x8E: stx_abs(); break;
     case 0x90: bcc_rel(); break;
+    case 0x91: sta_idy(); break;
+    case 0x94: sty_zpx(); break;
+    case 0x95: sta_zpx(); break;
+    case 0x96: stx_zpy(); break;
+    case 0x98: tya_imp(); break;
+    case 0x99: sta_aby(); break;
+    case 0x9A: txs_imp(); break;
+    case 0x9D: sta_abx(); break;
     case 0xA0: ldy_imm(); break;
     case 0xA1: lda_idx(); break;
     case 0xA2: ldx_imm(); break;
     case 0xA4: ldy_zp(); break;
     case 0xA5: lda_zp(); break;
     case 0xA6: ldx_zp(); break;
+    case 0xA8: tay_imp(); break;
     case 0xA9: lda_imm(); break;
+    case 0xAA: tax_imp(); break;
     case 0xAC: ldy_abs(); break;
     case 0xAD: lda_abs(); break;
     case 0xAE: ldx_abs(); break;
@@ -1553,6 +1697,7 @@ void cpu_step()
     case 0xB6: ldx_zpy(); break;
     case 0xB8: clv(); break;
     case 0xB9: lda_aby(); break;
+    case 0xBA: tsx_imp(); break;
     case 0xBC: ldy_abx(); break;
     case 0xBD: lda_abx(); break;
     case 0xBE: ldx_aby(); break;
