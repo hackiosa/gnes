@@ -1762,6 +1762,7 @@ void cpu_step()
     case 0xFE: inc_abx(); break;
     default:
         printf("6502.c: Meeh! I don't know that instruction @ %4x\n", pc);
+        nop_imp();
         break;
     }
 }
